@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const {
   getBootcamps,
   getBootcamp,
@@ -6,33 +6,42 @@ const {
   updateBootcamp,
   deleteBootcamp,
   getBootcampsInRadius,
-  bootcampPhotoUpload,
-} = require("../controllers/bootcamps");
+  bootcampPhotoUpload
+} = require('../controllers/bootcamps');
 
-const Bootcamp = require("../models/Bootcamp");
-
-const advancedResults = require("../middleware/advancedResults");
+const Bootcamp = require('../models/Bootcamp');
 
 // Include other resource routers
-const courseRouter = require("./courses");
+const courseRouter = require('./courses');
+// const reviewRouter = require('./reviews');
 
 const router = express.Router();
 
-const { protect } = require('../middleware/auth');
+const advancedResults = require('../middleware/advancedResults');
+const { protect, authorize } = require('../middleware/auth');
 
 // Re-route into other resource routers
-router.use("/:bootcampId/courses", courseRouter);
+router.use('/:bootcampId/courses', courseRouter);
+// router.use('/:bootcampId/reviews', reviewRouter);
 
-router.route("/radius/:zipcode/:distance").get(getBootcampsInRadius);
+router.route('/radius/:zipcode/:distance').get(getBootcampsInRadius);
 
-router.route("/:id/photo").put(protect, bootcampPhotoUpload);
-
-router.route("/").get(advancedResults(Bootcamp, "courses"), getBootcamps).post(protect, createBootcamp);
 router
-  .route("/:id")
+  .route('/:id/photo')
+  .put(protect, authorize('publisher', 'admin'), bootcampPhotoUpload);
+
+router
+  .route('/')
+  .get(advancedResults(Bootcamp, 'courses'), getBootcamps)
+  .post(protect, authorize('publisher', 'admin'), createBootcamp);
+
+router
+  .route('/:id')
   .get(getBootcamp)
-  .put(protect, updateBootcamp)
-  .delete(protect, deleteBootcamp);
+  .put(protect, authorize('publisher', 'admin'), updateBootcamp)
+  .delete(protect, authorize('publisher', 'admin'), deleteBootcamp);
+
+module.exports = router;
 
 // router.get("/", (req, res) => {
 //   res.status(200).json({
@@ -68,5 +77,3 @@ router
 //     msg: `delete bootcamps with id ${req.params.id}`,
 //   });
 // });
-
-module.exports = router;
